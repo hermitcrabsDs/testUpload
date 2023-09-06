@@ -1,0 +1,182 @@
+{#
+{% if is_in_editor %}
+{% else %}
+<div class="login-popup_v2">
+   <div class="inner">
+      <div class="row-flex flex-wrap">
+         <div class="left_sec">
+            <img class="hidden-phone" src="https://6212555.fs1.hubspotusercontent-na1.net/hubfs/6212555/Circle%202.0%20Refresh/images/Background-login.jpg" alt="play">
+            <div class="visible-phone" style="background-image:url('https://6212555.fs1.hubspotusercontent-na1.net/hubfs/6212555/Circle%202.0%20Refresh/images/login-bg.jpg')"></div>
+         </div>
+         <div class="right_sec">
+            <button class="close-login">
+               <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 17 17" fill="none">
+                  <path d="M1 15.1421L15.1421 0.999954" stroke="black" stroke-width="2" stroke-linecap="round"/>
+                  <path d="M1 1.14209L15.1421 15.2842" stroke="black" stroke-width="2" stroke-linecap="round"/>
+               </svg>
+            </button>
+            <div class="logo-wrap">
+               <img src="{{ logo }}" alt="ActiveSg"  class="img">
+               <h3>Login</h3>
+               <p>Please login with any of the options below</p>
+            </div>
+            <div class="form">
+               <a href="/_hcms/mem/login?redirect_url={{ content.absolute_url  }}" class="signup-button-head button">Login</a>
+              
+            </div>
+            <div class="row-flex align-center justify-center">
+               <div class="or">OR</div>
+            </div>
+            <div>
+
+               <div class="social-wrapper">
+                  <div class="google">
+                     <script src="https://apis.google.com/js/platform.js" async defer></script>
+                     <meta name="google-signin-client_id" content="849303675035-g8s4824gcpolbcmtrfutqsir47ncics8.apps.googleusercontent.com">
+                     <script>
+                        async function onLogin (googleUser) {
+                           console.log("inside google login");
+                           // logout to prevent login loop because Google automatically calls this function if logged in
+                           gapi.auth2.getAuthInstance().disconnect();
+                           let redirectURL = '{{ content.absolute_url }}';
+                           document.querySelectorAll('.hs-google-id-token').forEach(function(input) {
+                              input.value = googleUser.getAuthResponse().id_token;
+                           });
+                           document.querySelectorAll('.hs-google-redirect').forEach(function(input) {
+                              input.value = redirectURL;
+                           });
+
+                           document.getElementsByClassName("hs-google-login-form")[0].submit();
+                           sessionStorage.setItem('social_login_type', 'google');
+                        } 
+                     </script>
+                     <form class="hs-google-login-form" method="post" action="/_hcms/mem/social/google?clientId=849303675035-g8s4824gcpolbcmtrfutqsir47ncics8">
+                        <input class="hs-google-id-token" type="hidden" name="googleIdToken" />
+                        <input type="hidden" name="redirect" class="hs-google-redirect" />
+                     </form>
+                     <div class="g-signin2" data-width="300" data-onsuccess="onLogin"></div>
+                  </div>    
+               </div>
+            </div>
+            <div class="sign-up row-flex align-center justify-center">
+               Don’t have an account yet? <a href="/signup">Sign Up</a>
+            </div>
+            <script>
+               const GOOGLE_CLIENT_ID = '849303675035-g8s4824gcpolbcmtrfutqsir47ncics8';
+               async function onSignIn (googleUser) {
+                  // logout to prevent login loop because Google automatically calls this function if logged in
+                  gapi.auth2.getAuthInstance().disconnect();
+
+                  let redirectURL = '{{ content.absolute_url }}';
+                  let profile = googleUser.getBasicProfile();
+                  let name = profile.getName();
+                  let email = profile.getEmail();
+                  document.querySelector('#gForm form input[type="email"]').value = email;
+                  document.querySelector('#gForm form input[name="firstname"]').value = name;
+                  document.querySelector("#gForm form").submit();
+                  document.querySelectorAll('.hs-google-id-token').forEach(function(input) {
+                     input.value = googleUser.getAuthResponse().id_token;
+                  });
+                  document.querySelectorAll('.hs-google-redirect').forEach(function(input) {
+                     input.value = redirectURL;
+                  });
+                  document.getElementsByClassName("hs-google-login-form")[0].submit();
+                  sessionStorage.setItem('social_login_type', 'google');
+
+               }
+
+               async function logout () {
+                  await fetch('/_hcms/mem/logout?redirect_url={{content.absolute_url}}');
+                              sessionStorage.removeItem('social_login_type');
+                  document.location.href = '{{ content.absolute_url }}';
+                  document.location.reload(true)
+                  console.log('logout')
+               }
+
+               async function onGoogleLogin (googleUser) {
+                  try {
+                     let redirectURL = '{{ content.absolute_url }}';
+                     let credential = googleUser.credential || '';
+                     let jwtTokenData = credential.split('.') || [];
+                     let jwtTokenBody = jwtTokenData[1] || '';
+                     let decodedToken = atob(jwtTokenBody);
+                     let userProfileData = JSON.parse(decodedToken);
+
+                     document.querySelector('#gForm form input[type="email"]').value = userProfileData.email;
+                     document.querySelector('#gForm form input[name="firstname"]').value = userProfileData.name;
+                     document.querySelector("#gForm form").submit();
+
+                     await fetch(`/_hcms/mem/social/google?clientId=${GOOGLE_CLIENT_ID}`, {
+                        method: 'POST',
+                        headers: {
+                           'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
+                        },
+                        body: `googleIdToken=${credential}&redirect=${redirectURL}`
+                     });
+                     document.location.href = redirectURL;
+                  } catch (error) {
+                     console.error(error);
+                  }
+               }  
+            </script>
+            <div id="gForm" style="display:none">
+               {% module "form" path="@hubspot/form" %}
+            </div>
+         </div>
+      </div>
+   </div>
+</div>{}
+<script>
+
+   const body = document.body;
+   const signUpButton = document.querySelector('.signup-button-head');
+   const signUpButtonFAQ = document.querySelector('.signup-button-faq');
+   const signUpCloseButton = document.querySelector('.close-login')
+   const mobileSignUpBtn = document.querySelector('.login-btn');
+
+   var items = document.querySelectorAll('.photo span')
+   if(items.length > 0 ){
+      function stringFirst(items){
+         var str = items.textContent;
+         items.textContent = str[0]
+      }
+      stringFirst(items[0]);
+      stringFirst(items[1]);
+   }
+   
+   
+   if(signUpButton){
+      signUpButton.addEventListener('click', function(event){
+         event.preventDefault()
+         if(body.classList.contains('logon-open')){
+            body.classList.remove('logon-open')
+         } else {
+            body.classList.add('logon-open')
+         }
+      })
+   }
+   if(signUpCloseButton){
+      signUpCloseButton.addEventListener('click', function(){
+         if(body.classList.contains('logon-open')){
+            body.classList.remove('logon-open')
+         }
+      })
+   }
+   if(mobileSignUpBtn){
+      mobileSignUpBtn.addEventListener('click', function(event){
+         event.preventDefault()
+         if(body.classList.contains('logon-open')){
+            body.classList.remove('logon-open')
+         } else {
+            body.classList.add('logon-open')
+         }
+      })
+   }
+   
+   {% if not request_contact.is_logged_in %}
+    $('.login-popup_v2 .close-login').remove();
+   {% endif %}
+   
+</script>
+{% endif %}
+#}
